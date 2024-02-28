@@ -2,10 +2,7 @@ package com.blubank.doctorappointment;
 
 import com.blubank.doctorappointment.exception.*;
 import com.blubank.doctorappointment.model.AppointmentStatus;
-import com.blubank.doctorappointment.model.dto.AppointmentDTO;
-import com.blubank.doctorappointment.model.dto.AppointmentPerDayRequestDTO;
-import com.blubank.doctorappointment.model.dto.AppointmentRequestDTO;
-import com.blubank.doctorappointment.model.dto.TakeAppointmentRequestDTO;
+import com.blubank.doctorappointment.model.dto.*;
 import com.blubank.doctorappointment.model.entity.AppointmentEntity;
 import com.blubank.doctorappointment.model.entity.DoctorEntity;
 import com.blubank.doctorappointment.model.entity.PatientEntity;
@@ -232,7 +229,30 @@ public class AppointmentServiceTests {
 //        verify(appointmentRepository, times(1)).findById(1L);
 //    }
 
+    @Test
+    public void testGetAppointmentByPhoneNumber_NoAppointmentFound() {
 
+        String phoneNumber = "1234567890";
+        when(appointmentRepository.findAppointmentEntityByPatientPhoneNumber(phoneNumber))
+                .thenReturn(new ArrayList<>());
+
+        AppointmentResponseDTO responseDTO = appointmentService.getAppointmentByPhoneNumber(phoneNumber);
+        assertEquals(0, responseDTO.getAppointmentList().size());
+    }
+
+    @Test
+    public void testGetAppointmentByPhoneNumber_MultipleAppointmentsFound() {
+        String phoneNumber = "1234567890";
+        List<AppointmentEntity> appointmentEntities = new ArrayList<>();
+        appointmentEntities.add(new AppointmentEntity());
+        appointmentEntities.add(new AppointmentEntity());
+        when(appointmentRepository.findAppointmentEntityByPatientPhoneNumber(phoneNumber))
+                .thenReturn(appointmentEntities);
+
+        AppointmentResponseDTO responseDTO = appointmentService.getAppointmentByPhoneNumber(phoneNumber);
+
+        assertEquals(2, responseDTO.getAppointmentList().size());
+    }
 }
 
 
