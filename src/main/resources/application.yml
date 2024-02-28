@@ -1,0 +1,29 @@
+spring:
+  h2:
+    console:
+      enabled: true
+  datasource:
+    url: jdbc:h2:mem:doctor_appointment;MODE=Oracle
+  jpa:
+    hibernate:
+      ddl-auto: update
+logging:
+  level:
+    root: INFO
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+    endpoint:
+      health:
+        show-details: always
+  health:
+    redis:
+      enabled: false
+  boot:
+    admin:
+      routes:
+        endpoints: env, metrics, trace, jolokia, info, configprops
+      client:
+        url: http://localhost:8080

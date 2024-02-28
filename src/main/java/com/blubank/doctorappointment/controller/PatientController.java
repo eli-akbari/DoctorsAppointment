@@ -1,15 +1,14 @@
 package com.blubank.doctorappointment.controller;
 
-import com.blubank.doctorappointment.service.DoctorService;
+import com.blubank.doctorappointment.service.PatientService;
 import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/doctor")
+@RequestMapping("/api/patient")
 @AllArgsConstructor
-public class DoctorController {
+public class PatientController {
 
-    private final DoctorService doctorService;
-
+    private final PatientService patientService;
 }
