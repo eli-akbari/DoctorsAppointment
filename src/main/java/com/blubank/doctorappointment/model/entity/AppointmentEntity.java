@@ -35,4 +35,7 @@ public class AppointmentEntity {
     @Column(name = "STATUS")
     private AppointmentStatus status;
 
+    @Version
+    private int version;
+
 }

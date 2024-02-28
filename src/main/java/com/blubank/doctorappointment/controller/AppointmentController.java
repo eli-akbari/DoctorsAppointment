@@ -31,4 +31,11 @@ public class AppointmentController {
         return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse<>(ResponseStatus.SUCCESS,result));
     }
 
+    @DeleteMapping("/{doctorId}/{appointmentId}")
+    public ResponseEntity<ApiResponse<Void>> deleteOpenAppointmentByDoctor(@PathVariable Long doctorId,@PathVariable Long appointmentId) {
+        appointmentService.deleteOpenAppointment(appointmentId,doctorId);
+        return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse<>(ResponseStatus.SUCCESS,null));
+    }
+
+
 }

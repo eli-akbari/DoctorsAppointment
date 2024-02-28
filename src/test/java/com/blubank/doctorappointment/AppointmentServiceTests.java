@@ -1,7 +1,6 @@
 package com.blubank.doctorappointment;
 
-import com.blubank.doctorappointment.exception.AppointmentDurationTooShortException;
-import com.blubank.doctorappointment.exception.EndTimeBeforeStartTimeException;
+import com.blubank.doctorappointment.exception.*;
 import com.blubank.doctorappointment.model.AppointmentStatus;
 import com.blubank.doctorappointment.model.dto.Appointment;
 import com.blubank.doctorappointment.model.dto.SetAppointmentRqDTO;
@@ -15,14 +14,17 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.dao.OptimisticLockingFailureException;
+import org.webjars.NotFoundException;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @SpringBootTest
 public class AppointmentServiceTests {
@@ -69,7 +71,6 @@ public class AppointmentServiceTests {
         assertTrue(appointments.isEmpty());
     }
 
-
     @Test
     public void testGetDoctorAppointments_AppointmentsExist_TakenAppointmentsIncludePatientDetails() {
         // Arrange
@@ -97,7 +98,7 @@ public class AppointmentServiceTests {
         takenAppointment.setEndTime(LocalDateTime.of(2024, 3, 1, 10, 30));
         takenAppointment.setStatus(AppointmentStatus.TAKEN);
         takenAppointment.setDoctor(doctor);
-        takenAppointment.setPatient(patient); // Assigning the patient retrieved from repository
+        takenAppointment.setPatient(patient);
         appointmentEntities.add(takenAppointment);
 
         when(appointmentRepository.findAppointmentEntitiesByDoctor_Id(doctorId)).thenReturn(appointmentEntities);
@@ -112,6 +113,64 @@ public class AppointmentServiceTests {
         assertEquals(AppointmentStatus.TAKEN, appointments.get(1).getStatus());
         assertEquals("John Doe", appointments.get(1).getPatientName());
         assertEquals("1234567890", appointments.get(1).getPatientPhoneNumber());
+    }
+
+    @Test
+    public void testDeleteOpenAppointment_NoOpenAppointment_NotFoundError() {
+        Long appointmentId = 1L;
+        Long doctorId = 1L;
+        when(appointmentRepository.findAppointmentEntityByIdAndDoctor_Id(appointmentId, doctorId)).thenReturn(java.util.Optional.empty());
+
+        assertThrows(AppointmentNotFoundException.class, () -> appointmentService.deleteOpenAppointment(appointmentId, doctorId));
+    }
+
+    @Test
+    public void testDeleteOpenAppointment_AppointmentTaken_TakenAppointmentError() {
+        Long appointmentId = 1L;
+        Long doctorId = 1L;
+        AppointmentEntity appointmentEntity = new AppointmentEntity();
+        appointmentEntity.setStatus(AppointmentStatus.TAKEN);
+        when(appointmentRepository.findAppointmentEntityByIdAndDoctor_Id(appointmentId, doctorId)).thenReturn(java.util.Optional.of(appointmentEntity));
+
+        assertThrows(TakenAppointmentException.class, () -> appointmentService.deleteOpenAppointment(appointmentId, doctorId));
+    }
+
+    @Test
+    public void testDeleteOpenAppointment_ConcurrencyIssue_ConflictError() {
+        Long appointmentId = 1L;
+        Long doctorId = 1L;
+        AppointmentEntity appointmentEntity = new AppointmentEntity();
+        appointmentEntity.setStatus(AppointmentStatus.AVAILABLE);
+        doThrow(OptimisticLockingFailureException.class).when(appointmentRepository).delete(appointmentEntity);
+        when(appointmentRepository.findAppointmentEntityByIdAndDoctor_Id(appointmentId, doctorId)).thenReturn(java.util.Optional.of(appointmentEntity));
+
+        assertThrows(ConflictException.class, () -> appointmentService.deleteOpenAppointment(appointmentId, doctorId));
+    }
+
+    @Test
+    public void testDeleteOpenAppointment_OpenAppointmentDeletedSuccessfully() {
+        Long appointmentId = 1L;
+        Long doctorId = 1L;
+        AppointmentEntity appointmentEntity = new AppointmentEntity();
+        appointmentEntity.setStatus(AppointmentStatus.AVAILABLE);
+        when(appointmentRepository.findAppointmentEntityByIdAndDoctor_Id(appointmentId, doctorId)).thenReturn(java.util.Optional.of(appointmentEntity));
+
+        appointmentService.deleteOpenAppointment(appointmentId, doctorId);
+
+        verify(appointmentRepository, times(1)).delete(appointmentEntity);
+    }
+
+    @Test
+    public void testGetOpenAppointmentsForDay_NoOpenAppointments_EmptyListReturned() {
+        Long doctorId = 1L;
+        LocalDate date = LocalDate.of(2024, 3, 1);
+        when(appointmentRepository.findAppointmentEntitiesByDoctor_IdAndStartTimeBetween(doctorId, date.atStartOfDay(), date.atTime(23, 59, 59)))
+                .thenReturn(new ArrayList<>());
+
+        List<Appointment> openAppointments = appointmentService.getOpenAppointmentsForDay(doctorId, date);
+
+        assertNotNull(openAppointments);
+        assertTrue(openAppointments.isEmpty());
     }
 
 }
