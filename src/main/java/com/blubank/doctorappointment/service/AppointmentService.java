@@ -15,7 +15,6 @@ import com.blubank.doctorappointment.repository.DoctorRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import javax.persistence.EntityNotFoundException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -62,6 +61,24 @@ public class AppointmentService {
         }
         SetAppointmentRsDTO result = new SetAppointmentRsDTO();
         result.setAppointmentList(AppointmentMapper.INSTANCE.toAppointments(appointmentEntities));
+        return result;
+    }
+
+    public SetAppointmentRsDTO getDoctorAppointments(Long doctorId) {
+        List<AppointmentEntity> appointmentEntities = appointmentRepository.findAppointmentEntitiesByDoctor_Id(doctorId);
+
+        List<Appointment> appointments = new ArrayList<>();
+        for (AppointmentEntity appointmentEntity : appointmentEntities) {
+            Appointment appointment = AppointmentMapper.INSTANCE.toAppointment(appointmentEntity);
+
+            if (appointmentEntity.getStatus() == AppointmentStatus.TAKEN) {
+                appointment.setPatientName(appointmentEntity.getPatient().getName());
+                appointment.setPatientPhoneNumber(appointmentEntity.getPatient().getPhoneNumber());
+            }
+            appointments.add(appointment);
+        }
+        SetAppointmentRsDTO result = new SetAppointmentRsDTO();
+        result.setAppointmentList(appointments);
         return result;
     }
 }

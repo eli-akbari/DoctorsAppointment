@@ -1,6 +1,7 @@
 package com.blubank.doctorappointment.model.dto;
 
 import com.blubank.doctorappointment.model.AppointmentStatus;
+import com.sun.jdi.PrimitiveValue;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -15,5 +16,6 @@ public class Appointment implements Serializable {
     private AppointmentStatus status;
     private String doctorName;
     private String patientName;
+    private String patientPhoneNumber;
 
 }

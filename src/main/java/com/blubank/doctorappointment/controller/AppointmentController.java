@@ -24,4 +24,11 @@ public class AppointmentController {
         SetAppointmentRsDTO result = appointmentService.setAppointmentsByDoctor(setAppointmentRequest,doctorId);
         return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse<>(ResponseStatus.SUCCESS,result));
     }
+
+    @GetMapping("/{doctorId}")
+    public ResponseEntity<ApiResponse<SetAppointmentRsDTO>> getDoctorAppointments(@PathVariable Long doctorId) {
+        SetAppointmentRsDTO result = appointmentService.getDoctorAppointments(doctorId);
+        return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse<>(ResponseStatus.SUCCESS,result));
+    }
+
 }

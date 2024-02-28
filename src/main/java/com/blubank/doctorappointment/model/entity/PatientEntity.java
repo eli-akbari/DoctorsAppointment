@@ -1,6 +1,8 @@
 package com.blubank.doctorappointment.model.entity;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import javax.persistence.*;
@@ -19,6 +21,9 @@ public class PatientEntity {
 
     @Column(name = "NAME")
     private String name;
+
+    @Column(name = "PHONE_NUMBER")
+    private String phoneNumber;
 
     @OneToMany(mappedBy = "patient", cascade = CascadeType.ALL)
     private List<AppointmentEntity> appointments;
