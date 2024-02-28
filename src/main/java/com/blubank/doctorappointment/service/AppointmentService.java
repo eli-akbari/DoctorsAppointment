@@ -2,24 +2,24 @@ package com.blubank.doctorappointment.service;
 
 import com.blubank.doctorappointment.exception.*;
 import com.blubank.doctorappointment.model.AppointmentStatus;
-import com.blubank.doctorappointment.model.dto.Appointment;
-import com.blubank.doctorappointment.model.dto.SetAppointmentRqDTO;
-import com.blubank.doctorappointment.model.dto.SetAppointmentRsDTO;
+import com.blubank.doctorappointment.model.dto.*;
 import com.blubank.doctorappointment.model.entity.AppointmentEntity;
 import com.blubank.doctorappointment.model.entity.DoctorEntity;
+import com.blubank.doctorappointment.model.entity.PatientEntity;
 import com.blubank.doctorappointment.model.mapper.AppointmentMapper;
 import com.blubank.doctorappointment.repository.AppointmentRepository;
 import com.blubank.doctorappointment.repository.DoctorRepository;
+import io.micrometer.core.instrument.util.StringUtils;
 import lombok.AllArgsConstructor;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
-import org.webjars.NotFoundException;
 
+import javax.transaction.Transactional;
 import java.time.Duration;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -30,9 +30,9 @@ public class AppointmentService {
     private final AppointmentRepository appointmentRepository;
 
 
-    public SetAppointmentRsDTO setAppointmentsByDoctor(SetAppointmentRqDTO setAppointmentRqDTO, Long doctorId) {
-        LocalDateTime startTime = setAppointmentRqDTO.getStartTime();
-        LocalDateTime endTime = setAppointmentRqDTO.getEndTime();
+    public AppointmentResponseDTO setAppointmentsByDoctor(AppointmentRequestDTO appointmentRqDTO, Long doctorId) {
+        LocalDateTime startTime = appointmentRqDTO.getStartTime();
+        LocalDateTime endTime = appointmentRqDTO.getEndTime();
 
         if (endTime.isBefore(startTime)) {
             throw new EndTimeBeforeStartTimeException();
@@ -61,17 +61,17 @@ public class AppointmentService {
             appointmentEntities.add(appointmentEntity);
             currentSlot = currentSlot.plusMinutes(30);
         }
-        SetAppointmentRsDTO result = new SetAppointmentRsDTO();
+        AppointmentResponseDTO result = new AppointmentResponseDTO();
         result.setAppointmentList(AppointmentMapper.INSTANCE.toAppointments(appointmentEntities));
         return result;
     }
 
-    public SetAppointmentRsDTO getDoctorAppointments(Long doctorId) {
+    public AppointmentResponseDTO getDoctorAppointments(Long doctorId) {
         List<AppointmentEntity> appointmentEntities = appointmentRepository.findAppointmentEntitiesByDoctor_Id(doctorId);
 
-        List<Appointment> appointments = new ArrayList<>();
+        List<AppointmentDTO> appointments = new ArrayList<>();
         for (AppointmentEntity appointmentEntity : appointmentEntities) {
-            Appointment appointment = AppointmentMapper.INSTANCE.toAppointment(appointmentEntity);
+            AppointmentDTO appointment = AppointmentMapper.INSTANCE.toAppointmentDto(appointmentEntity);
 
             if (appointmentEntity.getStatus() == AppointmentStatus.TAKEN) {
                 appointment.setPatientName(appointmentEntity.getPatient().getName());
@@ -79,7 +79,7 @@ public class AppointmentService {
             }
             appointments.add(appointment);
         }
-        SetAppointmentRsDTO result = new SetAppointmentRsDTO();
+        AppointmentResponseDTO result = new AppointmentResponseDTO();
         result.setAppointmentList(appointments);
         return result;
     }
@@ -101,12 +101,61 @@ public class AppointmentService {
         }
     }
 
-    public List<Appointment> getOpenAppointmentsForDay(Long doctorId, LocalDate date) {
-        List<AppointmentEntity> appointmentEntities = appointmentRepository.findAppointmentEntitiesByDoctor_IdAndStartTimeBetween(doctorId, date.atStartOfDay(), date.atTime(23, 59, 59));
+    public AppointmentResponseDTO getOpenAppointmentsForDay(Long doctorId, AppointmentPerDayRequestDTO appointmentPerDayRequestDTO) {
+        List<AppointmentEntity> appointmentEntities = appointmentRepository.
+                findAppointmentEntitiesByDoctor_IdAndStartTimeBetween(doctorId, appointmentPerDayRequestDTO.getDay().atStartOfDay(), appointmentPerDayRequestDTO.getDay().atTime(23, 59, 59));
 
-        return appointmentEntities.stream()
+        List<AppointmentDTO> appointments = appointmentEntities.stream()
                 .filter(appointmentEntity -> appointmentEntity.getStatus() == AppointmentStatus.AVAILABLE)
-                .map(AppointmentMapper.INSTANCE::toAppointment)
+                .map(AppointmentMapper.INSTANCE::toAppointmentDto)
                 .collect(Collectors.toList());
+
+        AppointmentResponseDTO appointmentRsDTO = new AppointmentResponseDTO();
+        appointmentRsDTO.setAppointmentList(appointments);
+        return appointmentRsDTO;
+    }
+
+    @Transactional
+    public void takeOpenAppointment(TakeAppointmentRequestDTO takeAppointmentRequestDTO) {
+        String patientName = takeAppointmentRequestDTO.getPatientName();
+        String patientPhoneNumber = takeAppointmentRequestDTO.getPhoneNumber();
+        Long appointmentId = takeAppointmentRequestDTO.getAppointmentId();
+
+        if (StringUtils.isBlank(patientName) || StringUtils.isBlank(patientPhoneNumber)) {
+            throw new MissingPatientInfoException();
+        }
+
+        Optional<AppointmentEntity> appointmentEntity = appointmentRepository.findById(appointmentId);
+        if (appointmentEntity.isEmpty()) {
+           throw new AppointmentNotFoundException();
+        }
+
+            synchronized (this) {
+            if (appointmentEntity.get().getStatus() != AppointmentStatus.AVAILABLE) {
+                throw new TakenAppointmentException();
+            }
+
+            PatientEntity patientEntity = appointmentEntity.get().getPatient();
+            patientEntity.setName(takeAppointmentRequestDTO.getPatientName());
+            patientEntity.setPhoneNumber(takeAppointmentRequestDTO.getPhoneNumber());
+
+            appointmentEntity.get().setStatus(AppointmentStatus.TAKEN);
+                try {
+                    appointmentRepository.save(appointmentEntity.get());
+                } catch (OptimisticLockingFailureException ex) {
+                    throw new ConflictException();
+                }
+        }
+    }
+
+    public AppointmentResponseDTO getAppointmentByPhoneNumber(String phoneNumber) {
+            List<AppointmentEntity> appointments = appointmentRepository.findAppointmentEntityByPatientPhoneNumber(phoneNumber);
+            List<AppointmentDTO> appointmentDTOs = appointments.stream()
+                    .map(AppointmentMapper.INSTANCE::toAppointmentDto)
+                    .collect(Collectors.toList());
+
+            AppointmentResponseDTO responseDTO = new AppointmentResponseDTO();
+            responseDTO.setAppointmentList(appointmentDTOs);
+            return responseDTO;
     }
 }

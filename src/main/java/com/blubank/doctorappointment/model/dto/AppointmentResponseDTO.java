@@ -6,7 +6,7 @@ import java.io.Serializable;
 import java.util.List;
 
 @Data
-public class SetAppointmentRsDTO implements Serializable {
+public class AppointmentResponseDTO implements Serializable {
 
-    private List<Appointment> appointmentList;
+    private List<AppointmentDTO> appointmentList;
 }

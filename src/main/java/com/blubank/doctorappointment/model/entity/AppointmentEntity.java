@@ -25,7 +25,7 @@ public class AppointmentEntity {
     private LocalDateTime endTime;
 
     @ManyToOne
-    @JoinColumn(name = "DOCTOR_ID", nullable = false)
+    @JoinColumn(name = "DOCTOR_ID", nullable = true)
     private DoctorEntity doctor;
 
     @ManyToOne
@@ -34,6 +34,9 @@ public class AppointmentEntity {
 
     @Column(name = "STATUS")
     private AppointmentStatus status;
+
+    @Column(name = "PATIENT_PHONE_NUMBER")
+    private String patientPhoneNumber;
 
     @Version
     private int version;

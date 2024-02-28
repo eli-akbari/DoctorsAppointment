@@ -2,8 +2,10 @@ package com.blubank.doctorappointment;
 
 import com.blubank.doctorappointment.exception.*;
 import com.blubank.doctorappointment.model.AppointmentStatus;
-import com.blubank.doctorappointment.model.dto.Appointment;
-import com.blubank.doctorappointment.model.dto.SetAppointmentRqDTO;
+import com.blubank.doctorappointment.model.dto.AppointmentDTO;
+import com.blubank.doctorappointment.model.dto.AppointmentPerDayRequestDTO;
+import com.blubank.doctorappointment.model.dto.AppointmentRequestDTO;
+import com.blubank.doctorappointment.model.dto.TakeAppointmentRequestDTO;
 import com.blubank.doctorappointment.model.entity.AppointmentEntity;
 import com.blubank.doctorappointment.model.entity.DoctorEntity;
 import com.blubank.doctorappointment.model.entity.PatientEntity;
@@ -15,7 +17,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.OptimisticLockingFailureException;
-import org.webjars.NotFoundException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -37,13 +38,13 @@ public class AppointmentServiceTests {
 
     @Test
     public void testEndTimeBeforeStartTime() {
-        LocalDateTime startTime = LocalDateTime.of(2024, 3, 1, 17, 0,0);
-        LocalDateTime endTime = LocalDateTime.of(2024, 3, 1, 9, 0,0);
+        LocalDateTime startTime = LocalDateTime.of(2024, 3, 1, 17, 0, 0);
+        LocalDateTime endTime = LocalDateTime.of(2024, 3, 1, 9, 0, 0);
         DoctorEntity doctor = new DoctorEntity();
         when(doctorRepository.findById(anyLong())).thenReturn(java.util.Optional.of(doctor));
 
         EndTimeBeforeStartTimeException exception = assertThrows(EndTimeBeforeStartTimeException.class,
-                () -> appointmentService.setAppointmentsByDoctor(new SetAppointmentRqDTO(startTime, endTime), 1L));
+                () -> appointmentService.setAppointmentsByDoctor(new AppointmentRequestDTO(startTime, endTime), 1L));
         assertEquals("End time cannot be before start time", exception.getMessage());
     }
 
@@ -55,7 +56,7 @@ public class AppointmentServiceTests {
         when(doctorRepository.findById(anyLong())).thenReturn(java.util.Optional.of(doctor));
 
         AppointmentDurationTooShortException exception = assertThrows(AppointmentDurationTooShortException.class,
-                () -> appointmentService.setAppointmentsByDoctor(new SetAppointmentRqDTO(startTime, endTime), 1L));
+                () -> appointmentService.setAppointmentsByDoctor(new AppointmentRequestDTO(startTime, endTime), 1L));
         assertEquals("Appointment duration should be at least 30 minutes", exception.getMessage());
     }
 
@@ -65,7 +66,7 @@ public class AppointmentServiceTests {
         Long doctorId = 1L;
         when(appointmentRepository.findAppointmentEntitiesByDoctor_Id(doctorId)).thenReturn(new ArrayList<>());
 
-        List<Appointment> appointments = appointmentService.getDoctorAppointments(doctorId).getAppointmentList();
+        List<AppointmentDTO> appointments = appointmentService.getDoctorAppointments(doctorId).getAppointmentList();
 
         assertNotNull(appointments);
         assertTrue(appointments.isEmpty());
@@ -73,7 +74,6 @@ public class AppointmentServiceTests {
 
     @Test
     public void testGetDoctorAppointments_AppointmentsExist_TakenAppointmentsIncludePatientDetails() {
-        // Arrange
         Long doctorId = 1L;
         List<AppointmentEntity> appointmentEntities = new ArrayList<>();
         DoctorEntity doctor = new DoctorEntity();
@@ -103,7 +103,7 @@ public class AppointmentServiceTests {
 
         when(appointmentRepository.findAppointmentEntitiesByDoctor_Id(doctorId)).thenReturn(appointmentEntities);
 
-        List<Appointment> appointments = appointmentService.getDoctorAppointments(doctorId).getAppointmentList();
+        List<AppointmentDTO> appointments = appointmentService.getDoctorAppointments(doctorId).getAppointmentList();
 
         assertNotNull(appointments);
         assertEquals(2, appointments.size());
@@ -167,10 +167,72 @@ public class AppointmentServiceTests {
         when(appointmentRepository.findAppointmentEntitiesByDoctor_IdAndStartTimeBetween(doctorId, date.atStartOfDay(), date.atTime(23, 59, 59)))
                 .thenReturn(new ArrayList<>());
 
-        List<Appointment> openAppointments = appointmentService.getOpenAppointmentsForDay(doctorId, date);
+        List<AppointmentDTO> openAppointments = appointmentService.getOpenAppointmentsForDay(doctorId, new AppointmentPerDayRequestDTO(date)).getAppointmentList();
 
         assertNotNull(openAppointments);
         assertTrue(openAppointments.isEmpty());
     }
 
+    @Test
+    public void testTakeOpenAppointment_MissingPatientInfo_ErrorThrown() {
+        TakeAppointmentRequestDTO requestDTO = new TakeAppointmentRequestDTO(
+                1L, "Eli", "");
+
+        assertThrows(MissingPatientInfoException.class, () -> appointmentService.takeOpenAppointment(requestDTO));
+    }
+
+    @Test
+    public void testTakeOpenAppointment_AppointmentAlreadyTaken_ErrorThrown() {
+        TakeAppointmentRequestDTO requestDTO = new TakeAppointmentRequestDTO(1L, "Eli", "1234567890");
+        AppointmentEntity appointmentEntity = new AppointmentEntity();
+        appointmentEntity.setStatus(AppointmentStatus.TAKEN);
+        when(appointmentRepository.findById(1L)).thenReturn(java.util.Optional.of(appointmentEntity));
+
+        assertThrows(TakenAppointmentException.class, () ->
+                appointmentService.takeOpenAppointment(requestDTO)
+        );
+    }
+
+
+//    @Test
+//    public void testConcurrentTakeOpenAppointment() throws InterruptedException {
+//        // Mock appointment entity
+//        AppointmentEntity appointmentEntity = new AppointmentEntity();
+//        appointmentEntity.setId(1L);
+//        appointmentEntity.setStatus(AppointmentStatus.AVAILABLE);
+//
+//        // Mock appointment request DTO
+//        TakeAppointmentRequestDTO takeAppointmentRequestDTO = new TakeAppointmentRequestDTO();
+//        takeAppointmentRequestDTO.setPatientName("John Doe");
+//        takeAppointmentRequestDTO.setPhoneNumber("1234567890");
+//        takeAppointmentRequestDTO.setAppointmentId(1L);
+//
+//        // Stub repository to return the mocked appointment entity
+//        when(appointmentRepository.findById(1L)).thenReturn(java.util.Optional.of(appointmentEntity));
+//
+//        // Simulate concurrent access with multiple threads
+//        Thread thread1 = new Thread(() -> {
+//            try {
+//                appointmentService.takeOpenAppointment(takeAppointmentRequestDTO);
+//            } catch (ConflictException e) {
+//            }
+//        });
+//
+//        Thread thread2 = new Thread(() -> {
+//            try {
+//                appointmentService.takeOpenAppointment(takeAppointmentRequestDTO);
+//            } catch (ConflictException e) {
+//            }
+//        });
+//        thread1.start();
+//        thread2.start();
+//
+//        thread1.join();
+//        thread2.join();
+//        verify(appointmentRepository, times(1)).findById(1L);
+//    }
+
+
 }
+
+

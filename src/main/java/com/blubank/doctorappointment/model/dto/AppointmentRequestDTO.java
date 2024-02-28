@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 
 @Data
 @AllArgsConstructor
-public class SetAppointmentRqDTO implements Serializable {
+public class AppointmentRequestDTO implements Serializable {
 
     private LocalDateTime startTime;
     private LocalDateTime endTime;

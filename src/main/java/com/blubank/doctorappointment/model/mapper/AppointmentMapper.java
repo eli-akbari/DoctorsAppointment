@@ -1,6 +1,6 @@
 package com.blubank.doctorappointment.model.mapper;
 
-import com.blubank.doctorappointment.model.dto.Appointment;
+import com.blubank.doctorappointment.model.dto.AppointmentDTO;
 import com.blubank.doctorappointment.model.entity.AppointmentEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -15,7 +15,7 @@ public interface AppointmentMapper {
 
     @Mapping(source = "doctor.name", target = "doctorName")
     @Mapping(source = "patient.name", target = "patientName")
-    Appointment toAppointment(AppointmentEntity appointmentEntity);
+    AppointmentDTO toAppointmentDto(AppointmentEntity appointmentEntity);
 
-    List<Appointment> toAppointments(List<AppointmentEntity> appointmentEntities);
+    List<AppointmentDTO> toAppointments(List<AppointmentEntity> appointmentEntities);
 }
