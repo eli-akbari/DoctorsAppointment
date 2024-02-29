@@ -2,8 +2,8 @@ package com.blubank.doctorappointment.controller;
 
 import com.blubank.doctorappointment.exception.ApiResponse;
 import com.blubank.doctorappointment.exception.ResponseStatus;
-import com.blubank.doctorappointment.model.dto.DoctorRequestDTO;
-import com.blubank.doctorappointment.model.dto.DoctorResponseDTO;
+import com.blubank.doctorappointment.model.dto.AddDoctorRequestDTO;
+import com.blubank.doctorappointment.model.dto.AddDoctorResponseDTO;
 import com.blubank.doctorappointment.service.DoctorService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -21,8 +21,8 @@ public class DoctorController {
     private final DoctorService doctorService;
 
     @PostMapping()
-    public ResponseEntity<ApiResponse<DoctorResponseDTO>> addNewDoctor(@RequestBody DoctorRequestDTO doctorRequestDTO) {
-        DoctorResponseDTO addedDoctor = doctorService.addNewDoctor(doctorRequestDTO);
+    public ResponseEntity<ApiResponse<AddDoctorResponseDTO>> addNewDoctor(@RequestBody AddDoctorRequestDTO addDoctorRequestDTO) {
+        AddDoctorResponseDTO addedDoctor = doctorService.addNewDoctor(addDoctorRequestDTO);
         return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse<>(ResponseStatus.SUCCESS,addedDoctor));
     }
 

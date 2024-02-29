@@ -2,9 +2,7 @@ package com.blubank.doctorappointment.controller;
 
 import com.blubank.doctorappointment.exception.ApiResponse;
 import com.blubank.doctorappointment.exception.ResponseStatus;
-import com.blubank.doctorappointment.model.dto.AppointmentPerDayRequestDTO;
-import com.blubank.doctorappointment.model.dto.AppointmentRequestDTO;
-import com.blubank.doctorappointment.model.dto.AppointmentResponseDTO;
+import com.blubank.doctorappointment.model.dto.*;
 import com.blubank.doctorappointment.service.AppointmentService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -20,8 +18,7 @@ public class AppointmentController {
     private final AppointmentService appointmentService;
 
     @PostMapping("/{doctorId}")
-    public ResponseEntity<ApiResponse<AppointmentResponseDTO>> setAppointmentsByDoctor(@PathVariable Long doctorId,
-                                                                                       @RequestBody AppointmentRequestDTO setAppointmentRequest) {
+    public ResponseEntity<ApiResponse<AppointmentResponseDTO>> setAppointmentsByDoctor(@PathVariable Long doctorId, @RequestBody AppointmentRequestDTO setAppointmentRequest) {
         AppointmentResponseDTO result = appointmentService.setAppointmentsByDoctor(setAppointmentRequest,doctorId);
         return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse<>(ResponseStatus.SUCCESS,result));
     }
@@ -38,11 +35,16 @@ public class AppointmentController {
         return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse<>(ResponseStatus.SUCCESS,null));
     }
 
-//    @PostMapping("/{doctorId}")
-//    public ResponseEntity<ApiResponse<AppointmentResponseDTO>> getOpenAppointmentsForDay(@PathVariable Long doctorId, @RequestBody AppointmentPerDayRequestDTO appointmentPerDayRequest) {
-//        AppointmentResponseDTO result = appointmentService.getOpenAppointmentsForDay(doctorId,appointmentPerDayRequest);
-//        return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse<>(ResponseStatus.SUCCESS,null));
-//    }
+    @PostMapping("/perDay/{doctorId}")
+    public ResponseEntity<ApiResponse<AppointmentResponseDTO>> getOpenAppointmentsForDay(@PathVariable Long doctorId, @RequestBody AppointmentPerDayRequestDTO appointmentPerDayRequest) {
+        AppointmentResponseDTO result = appointmentService.getOpenAppointmentsForDay(doctorId,appointmentPerDayRequest);
+        return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse<>(ResponseStatus.SUCCESS,result));
+    }
 
+    @PostMapping("/take")
+    public ResponseEntity<ApiResponse<TakeAppointmentResponseDTO>> takeOpenAppointment(@RequestBody TakeAppointmentRequestDTO takeAppointmentRequestDTO) {
+        TakeAppointmentResponseDTO takenAppointment = appointmentService.takeOpenAppointment(takeAppointmentRequestDTO);
+        return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse<>(ResponseStatus.SUCCESS,takenAppointment));
+    }
 
 }

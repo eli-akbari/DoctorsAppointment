@@ -9,6 +9,7 @@ import com.blubank.doctorappointment.model.entity.PatientEntity;
 import com.blubank.doctorappointment.model.mapper.AppointmentMapper;
 import com.blubank.doctorappointment.repository.AppointmentRepository;
 import com.blubank.doctorappointment.repository.DoctorRepository;
+import com.blubank.doctorappointment.repository.PatientRepository;
 import io.micrometer.core.instrument.util.StringUtils;
 import lombok.AllArgsConstructor;
 import org.springframework.dao.OptimisticLockingFailureException;
@@ -28,6 +29,7 @@ public class AppointmentService {
 
     private final DoctorRepository doctorRepository;
     private final AppointmentRepository appointmentRepository;
+    private final PatientRepository patientRepository;
 
 
     public AppointmentResponseDTO setAppointmentsByDoctor(AppointmentRequestDTO appointmentRqDTO, Long doctorId) {
@@ -84,6 +86,7 @@ public class AppointmentService {
         return result;
     }
 
+    @Transactional
     public void deleteOpenAppointment(Long appointmentId, Long doctorId) {
         AppointmentEntity appointmentEntity = appointmentRepository.findAppointmentEntityByIdAndDoctor_Id(appointmentId, doctorId)
                 .orElseThrow(AppointmentNotFoundException::new);
@@ -116,7 +119,7 @@ public class AppointmentService {
     }
 
     @Transactional
-    public void takeOpenAppointment(TakeAppointmentRequestDTO takeAppointmentRequestDTO) {
+    public TakeAppointmentResponseDTO takeOpenAppointment(TakeAppointmentRequestDTO takeAppointmentRequestDTO) {
         String patientName = takeAppointmentRequestDTO.getPatientName();
         String patientPhoneNumber = takeAppointmentRequestDTO.getPhoneNumber();
         Long appointmentId = takeAppointmentRequestDTO.getAppointmentId();
@@ -135,16 +138,18 @@ public class AppointmentService {
                 throw new TakenAppointmentException();
             }
 
-            PatientEntity patientEntity = appointmentEntity.get().getPatient();
-            patientEntity.setName(takeAppointmentRequestDTO.getPatientName());
-            patientEntity.setPhoneNumber(takeAppointmentRequestDTO.getPhoneNumber());
-
+            Optional<PatientEntity> patientEntity = patientRepository.findPatientEntityByNameAndPhoneNumber(patientName,patientPhoneNumber);
+            if (patientEntity.isEmpty()) {
+                throw new PatientNotFoundException();
+            }
+            appointmentEntity.get().setPatient(patientEntity.get());
             appointmentEntity.get().setStatus(AppointmentStatus.TAKEN);
                 try {
                     appointmentRepository.save(appointmentEntity.get());
                 } catch (OptimisticLockingFailureException ex) {
                     throw new ConflictException();
                 }
+                return AppointmentMapper.INSTANCE.toTakeAppointmentRsDto(appointmentEntity.get());
         }
     }
 

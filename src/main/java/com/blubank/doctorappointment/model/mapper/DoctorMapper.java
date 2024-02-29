@@ -1,7 +1,7 @@
 package com.blubank.doctorappointment.model.mapper;
 
-import com.blubank.doctorappointment.model.dto.DoctorRequestDTO;
-import com.blubank.doctorappointment.model.dto.DoctorResponseDTO;
+import com.blubank.doctorappointment.model.dto.AddDoctorRequestDTO;
+import com.blubank.doctorappointment.model.dto.AddDoctorResponseDTO;
 import com.blubank.doctorappointment.model.entity.DoctorEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -13,7 +13,7 @@ public interface DoctorMapper {
     DoctorMapper INSTANCE = Mappers.getMapper(DoctorMapper.class);
 
     @Mapping(target = "id", ignore = true)
-    DoctorEntity toDoctorEntity(DoctorRequestDTO doctorRequestDTO);
+    DoctorEntity toDoctorEntity(AddDoctorRequestDTO addDoctorRequestDTO);
 
-    DoctorResponseDTO toDoctorRsDto(DoctorEntity doctorEntity);
+    AddDoctorResponseDTO toDoctorRsDto(DoctorEntity doctorEntity);
 }

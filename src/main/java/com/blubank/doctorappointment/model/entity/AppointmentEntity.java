@@ -25,11 +25,11 @@ public class AppointmentEntity {
     private LocalDateTime endTime;
 
     @ManyToOne
-    @JoinColumn(name = "DOCTOR_ID", nullable = true)
+    @JoinColumn(name = "DOCTOR_ID", nullable = false)
     private DoctorEntity doctor;
 
     @ManyToOne
-    @JoinColumn(name = "PATIENT_ID", nullable = false)
+    @JoinColumn(name = "PATIENT_ID")
     private PatientEntity patient;
 
     @Column(name = "STATUS")

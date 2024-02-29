@@ -5,7 +5,9 @@ import lombok.Data;
 import java.io.Serializable;
 
 @Data
-public class DoctorRequestDTO implements Serializable {
+public class AddPatientRequestDTO implements Serializable {
 
     private String name;
+    private String phoneNumber;
+
 }
