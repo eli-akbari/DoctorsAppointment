@@ -163,4 +163,13 @@ public class AppointmentService {
             responseDTO.setAppointmentList(appointmentDTOs);
             return responseDTO;
     }
+
+    public AppointmentResponseDTO getPatientAppointmentByPatientPhoneNumber(Long doctorId, String phoneNumber) {
+
+        List<AppointmentEntity> availableAppointments = appointmentRepository.findAppointmentEntitiesByDoctor_IdAndPatientPhoneNumber(doctorId,phoneNumber);
+        AppointmentResponseDTO appointmentResponseDTO = new AppointmentResponseDTO();
+        List<AppointmentDTO> appointmentDTOS = AppointmentMapper.INSTANCE.toAppointments(availableAppointments);
+        appointmentResponseDTO.setAppointmentList(appointmentDTOS);
+        return appointmentResponseDTO;
+    }
 }

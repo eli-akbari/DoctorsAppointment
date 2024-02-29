@@ -47,4 +47,11 @@ public class AppointmentController {
         return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse<>(ResponseStatus.SUCCESS,takenAppointment));
     }
 
+    @GetMapping("/{doctorId}/{phoneNumber}")
+    public ResponseEntity<ApiResponse<AppointmentResponseDTO>> getPatientAppointmentsByPhoneNumber(@PathVariable Long doctorId
+            ,@PathVariable String phoneNumber) {
+        AppointmentResponseDTO result = appointmentService.getPatientAppointmentByPatientPhoneNumber(doctorId,phoneNumber);
+        return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse<>(ResponseStatus.SUCCESS,result));
+    }
+
 }

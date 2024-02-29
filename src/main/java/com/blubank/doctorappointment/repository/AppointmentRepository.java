@@ -1,5 +1,6 @@
 package com.blubank.doctorappointment.repository;
 
+import com.blubank.doctorappointment.model.AppointmentStatus;
 import com.blubank.doctorappointment.model.entity.AppointmentEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -15,4 +16,5 @@ public interface AppointmentRepository extends JpaRepository<AppointmentEntity, 
     List<AppointmentEntity> findAppointmentEntityByPatientPhoneNumber(String phoneNumber);
     Optional<AppointmentEntity> findAppointmentEntityByIdAndDoctor_Id(Long appointmentId, Long doctorId);
     List<AppointmentEntity> findAppointmentEntitiesByDoctor_IdAndStartTimeBetween(Long doctorId, LocalDateTime startTime, LocalDateTime endTime);
+    List<AppointmentEntity> findAppointmentEntitiesByDoctor_IdAndPatientPhoneNumber(Long doctorId, String phoneNumber);
 }

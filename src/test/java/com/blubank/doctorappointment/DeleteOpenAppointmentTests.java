@@ -52,7 +52,7 @@ public class DeleteOpenAppointmentTests {
     }
 
     @Test
-    public void testConcurrentAppointmentDeletionAndTaking() throws InterruptedException {
+    public void testAppointmentDeletionAndTakingSimultaneous() throws InterruptedException {
         AppointmentEntity appointmentEntity = new AppointmentEntity();
         appointmentEntity.setId(1L);
         appointmentEntity.setStatus(AppointmentStatus.AVAILABLE);
@@ -86,6 +86,19 @@ public class DeleteOpenAppointmentTests {
         verify(appointmentRepository, never()).save(any(AppointmentEntity.class));
 
         executorService.shutdown();
+    }
+
+    @Test
+    public void testDeleteOpenAppointmentSuccessfully() {
+        Long appointmentId = 1L;
+        Long doctorId = 1L;
+        AppointmentEntity appointmentEntity = new AppointmentEntity();
+        appointmentEntity.setStatus(AppointmentStatus.AVAILABLE);
+        when(appointmentRepository.findAppointmentEntityByIdAndDoctor_Id(appointmentId, doctorId)).thenReturn(java.util.Optional.of(appointmentEntity));
+
+        appointmentService.deleteOpenAppointment(appointmentId, doctorId);
+
+        verify(appointmentRepository, times(1)).delete(appointmentEntity);
     }
 
     private TakeAppointmentRequestDTO createMockTakeAppointmentRequestDTO(Long appointmentId) {
