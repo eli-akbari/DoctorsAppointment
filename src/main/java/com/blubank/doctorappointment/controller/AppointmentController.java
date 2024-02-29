@@ -10,6 +10,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
+
 @RestController
 @RequestMapping("/api/appointments")
 @AllArgsConstructor
@@ -19,7 +21,7 @@ public class AppointmentController {
 
     @HandleAppointmentException
     @PostMapping("/{doctorId}")
-    public ResponseEntity<ApiResponse<AppointmentResponseDTO>> setAppointmentsByDoctor(@PathVariable Long doctorId, @RequestBody AppointmentRequestDTO setAppointmentRequest) {
+    public ResponseEntity<ApiResponse<AppointmentResponseDTO>> setAppointmentsByDoctor(@PathVariable Long doctorId,@Valid @RequestBody AppointmentRequestDTO setAppointmentRequest) {
         AppointmentResponseDTO result = appointmentService.setAppointmentsByDoctor(setAppointmentRequest,doctorId);
         return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse<>(com.blubank.doctorappointment.exception.ResponseStatus.SUCCESS,result));
     }
@@ -40,14 +42,14 @@ public class AppointmentController {
 
     @HandleAppointmentException
     @PostMapping("/perDay/{doctorId}")
-    public ResponseEntity<ApiResponse<AppointmentResponseDTO>> getOpenAppointmentsForDay(@PathVariable Long doctorId, @RequestBody AppointmentPerDayRequestDTO appointmentPerDayRequest) {
+    public ResponseEntity<ApiResponse<AppointmentResponseDTO>> getOpenAppointmentsForDay(@PathVariable Long doctorId,@Valid @RequestBody AppointmentPerDayRequestDTO appointmentPerDayRequest) {
         AppointmentResponseDTO result = appointmentService.getOpenAppointmentsForDay(doctorId,appointmentPerDayRequest);
         return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse<>(com.blubank.doctorappointment.exception.ResponseStatus.SUCCESS,result));
     }
 
     @HandleAppointmentException
     @PostMapping("/take")
-    public ResponseEntity<ApiResponse<TakeAppointmentResponseDTO>> takeOpenAppointment(@RequestBody TakeAppointmentRequestDTO takeAppointmentRequestDTO) {
+    public ResponseEntity<ApiResponse<TakeAppointmentResponseDTO>> takeOpenAppointment(@Valid @RequestBody TakeAppointmentRequestDTO takeAppointmentRequestDTO) {
         TakeAppointmentResponseDTO takenAppointment = appointmentService.takeOpenAppointment(takeAppointmentRequestDTO);
         return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse<>(com.blubank.doctorappointment.exception.ResponseStatus.SUCCESS,takenAppointment));
     }
