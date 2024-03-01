@@ -40,7 +40,7 @@ public class ViewAppointmentsByPatientTests {
 
 
     @Test
-    public void testGetAppointmentByPhoneNumber_MultipleAppointmentsFound() {
+    public void testGetAppointmentByPhoneNumberMultipleAppointments() {
         String phoneNumber = "09129570945";
         List<AppointmentEntity> appointmentEntities = new ArrayList<>();
         appointmentEntities.add(new AppointmentEntity());

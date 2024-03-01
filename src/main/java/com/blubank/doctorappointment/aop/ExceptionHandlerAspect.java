@@ -38,7 +38,7 @@ public class ExceptionHandlerAspect {
                     .body(new ApiResponse<>(ResponseStatus.PATIENT_NOT_FOUND, e.getMessage()));
         } catch (TakenAppointmentException e) {
             return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE)
-                    .body(new ApiResponse<>(ResponseStatus.PATIENT_NOT_FOUND, e.getMessage()));
+                    .body(new ApiResponse<>(ResponseStatus.APPOINTMENT_ALREADY_TAKEN, e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ApiResponse<>(ResponseStatus.INTERNAL_SERVER_ERROR, e.getMessage()));
